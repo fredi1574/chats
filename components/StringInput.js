@@ -3,22 +3,43 @@ import { View } from "react-native";
 import { Input } from "@rneui/themed";
 
 import InputStyle from "../styles/InputStyle";
+import { collection, addDoc } from "firebase/firestore";
+
+import { db } from "../firebaseConfig";
 
 export default function StringInput() {
   let [message, setMessage] = React.useState("");
   let [messageTime, setMessageTime] = React.useState(null);
 
-  const handleEnterPress = () => {
-    // Saves the current input in a message variable
-    // TODO: Upload this as a new message
-    const savedMessage = message;
-    const currentTime = new Date().toLocaleTimeString([], { hour12: false });
-    // Sets the message time to the current time and clears the input
-    setMessageTime(currentTime);
-    setMessage("");
+  //TODO: add sender and addressee id
 
-    console.log("message: ", savedMessage);
-    console.log("messageTime: ", currentTime);
+  const handleEnterPress = async () => {
+    // Save the current input content
+    const savedMessage = message;
+    // Save the current time and date
+    const currentTime = new Date().toLocaleTimeString([], { hour12: false });
+    const currentDate = new Date().toLocaleDateString([], {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    messageTime = `${currentDate} ${currentTime}`;
+
+    try {
+      await addDoc(collection(db, "messages"), {
+        message: savedMessage,
+        messageTime: messageTime,
+        // senderId: senderId,
+      });
+
+      // Set the message time to the current time and clear the input
+      setMessage("");
+
+      // console.log("message: ", savedMessage);
+      // console.log("messageTime: ", messageTime);
+    } catch (error) {
+      console.error("Error writing new message to Firebase Database", error);
+    }
   };
 
   return (
@@ -33,7 +54,7 @@ export default function StringInput() {
           color: "#176099",
           type: "feather",
           onPress: handleEnterPress,
-        }} // ? Why doesnt it work on web?
+        }} // ? Why doesn't it work on web?
       />
     </View>
   );
